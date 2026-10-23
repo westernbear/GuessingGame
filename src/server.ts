@@ -4,7 +4,14 @@ import { dayNumber, handle, type Game, type Judge } from "./game.ts";
 
 // 오픈빌더 스킬의 헤더값에 x-skill-secret을 넣어 카카오가 아닌 호출을 막는다
 const SECRET = process.env.SKILL_SECRET;
-if (!SECRET) console.warn("SKILL_SECRET is not set: /skill accepts any caller (local dev only)");
+// 비밀이 없으면 시작하지 않는다. 아무 호출이나 받는 모드는 ALLOW_INSECURE_DEV=1로 명시한 로컬 개발에서만 쓴다
+if (!SECRET) {
+  if (process.env.ALLOW_INSECURE_DEV !== "1") {
+    console.error("SKILL_SECRET is not set: refusing to start (set ALLOW_INSECURE_DEV=1 for local dev only)");
+    process.exit(1);
+  }
+  console.warn("SKILL_SECRET is not set and ALLOW_INSECURE_DEV=1: /skill accepts any caller (local dev only)");
+}
 const MAX_BODY = 64 * 1024;
 
 // OpenCode Zen의 Jev(System One) 엔드포인트. 무료 모델은 키 없이 호출되고, 유료 jev-1.13은 OPENCODE_API_KEY가 필요하다

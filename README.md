@@ -11,7 +11,8 @@
 
 ```sh
 npm install
-PORT=8080 npm start   # POST /skill
+SKILL_SECRET=<비밀> PORT=8080 npm start   # POST /skill
+ALLOW_INSECURE_DEV=1 PORT=8080 npm start  # 로컬 개발: 비밀 없이 아무 호출이나 받음
 npm test            # 게임 로직 테스트
 npm run check       # 타입 체크
 ```
@@ -20,7 +21,8 @@ Node 23.6 이상이 필요합니다(`.ts`를 직접 실행). 런타임 의존성
 
 | 환경변수 | 기본값 | 설명 |
 |---|---|---|
-| `SKILL_SECRET` | (없음) | 설정하면 `x-skill-secret` 헤더가 같은 요청만 받습니다. 공개 배포 시 필수 |
+| `SKILL_SECRET` | (없음) | `x-skill-secret` 헤더가 같은 요청만 받습니다. 필수이며, 비어 있으면 서버가 시작하지 않습니다 |
+| `ALLOW_INSECURE_DEV` | (없음) | `1`이면 `SKILL_SECRET` 없이 시작해 아무 호출이나 받습니다. 로컬 개발 전용, 공개 배포에 쓰지 마세요 |
 | `JEV_MODEL` | `jev-1.13-free` | 유료 `jev-1.13`을 쓰려면 바꾸고 키를 넣습니다 |
 | `OPENCODE_API_KEY` | (없음) | 있으면 `Authorization: Bearer`로 보냅니다 |
 | `JEV_URL` | `https://opencode.ai/zen/v1/systemone` | 다른 System One 호환 엔드포인트(예: TypeSafe `https://api.typesafe.ai/v1/systemone`) |
