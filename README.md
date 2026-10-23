@@ -20,6 +20,7 @@ Node 23.6 이상이 필요합니다(`.ts`를 직접 실행). 런타임 의존성
 
 | 환경변수 | 기본값 | 설명 |
 |---|---|---|
+| `SKILL_SECRET` | (없음) | 설정하면 `x-skill-secret` 헤더가 같은 요청만 받습니다. 공개 배포 시 필수 |
 | `JEV_MODEL` | `jev-1.13-free` | 유료 `jev-1.13`을 쓰려면 바꾸고 키를 넣습니다 |
 | `OPENCODE_API_KEY` | (없음) | 있으면 `Authorization: Bearer`로 보냅니다 |
 | `JEV_URL` | `https://opencode.ai/zen/v1/systemone` | 다른 System One 호환 엔드포인트(예: TypeSafe `https://api.typesafe.ai/v1/systemone`) |
@@ -29,7 +30,7 @@ Node 23.6 이상이 필요합니다(`.ts`를 직접 실행). 런타임 의존성
 ## 1:1 챗봇 연결 (카카오 i 오픈빌더)
 
 1. [챗봇 관리자센터](https://chatbot.kakao.com)에서 봇을 만들고 카카오톡 채널을 연결합니다.
-2. **스킬**에 `https://<서버>/skill`을 등록합니다.
+2. **스킬**에 `https://<서버>/skill`을 등록하고, 헤더값에 `x-skill-secret: <SKILL_SECRET 값>`을 넣습니다.
 3. **폴백 블록**의 응답을 이 스킬로 설정합니다. 그러면 모든 발화가 서버로 옵니다.
 4. 배포합니다.
 

@@ -1,5 +1,11 @@
+import { timingSafeEqual } from "node:crypto";
 import { createServer } from "node:http";
-import { handle, type Game, type Judge } from "./game.ts";
+import { dayNumber, handle, type Game, type Judge } from "./game.ts";
+
+// 오픈빌더 스킬의 헤더값에 x-skill-secret을 넣어 카카오가 아닌 호출을 막는다
+const SECRET = process.env.SKILL_SECRET;
+if (!SECRET) console.warn("SKILL_SECRET is not set: /skill accepts any caller (local dev only)");
+const MAX_BODY = 64 * 1024;
 
 // OpenCode Zen의 Jev(System One) 엔드포인트. 무료 모델은 키 없이 호출되고, 유료 jev-1.13은 OPENCODE_API_KEY가 필요하다
 const JEV_URL = process.env.JEV_URL ?? "https://opencode.ai/zen/v1/systemone";
@@ -31,6 +37,17 @@ const judge: Judge = async (secret, message) => {
 
 // ponytail: 메모리 저장, 재시작하면 게임이 사라진다. 여러 인스턴스로 늘리면 Redis로 옮긴다
 const games = new Map<string, Game>();
+let pruned = 0;
+// 지난 날짜 게임은 쓸모가 없으니 날이 바뀌면 지운다
+function prune() {
+  const today = dayNumber();
+  if (today === pruned) return;
+  for (const [k, g] of games) if (g.day < today) games.delete(k);
+  pruned = today;
+}
+
+const authorized = (header: string | string[] | undefined) =>
+  !SECRET || (typeof header === "string" && header.length === SECRET.length && timingSafeEqual(Buffer.from(header), Buffer.from(SECRET)));
 
 const kakao = (text: string, buttons: string[]) => ({
   version: "2.0",
@@ -42,10 +59,15 @@ const kakao = (text: string, buttons: string[]) => ({
 
 createServer(async (req, res) => {
   if (req.method !== "POST" || req.url !== "/skill") return res.writeHead(404).end();
+  if (!authorized(req.headers["x-skill-secret"])) return res.writeHead(401).end();
+  if (Number(req.headers["content-length"] ?? 0) > MAX_BODY) return res.writeHead(413).end();
   let body;
   try {
     let raw = "";
-    for await (const chunk of req) raw += chunk;
+    for await (const chunk of req) {
+      raw += chunk;
+      if (raw.length > MAX_BODY) return res.writeHead(413).end(() => req.destroy());
+    }
     body = JSON.parse(raw);
   } catch {
     return res.writeHead(400).end();
@@ -53,8 +75,10 @@ createServer(async (req, res) => {
   const user = body?.userRequest;
   // 그룹방은 방 하나에 게임 하나, 1:1은 사용자마다 게임 하나
   const key = user?.chat?.properties?.botGroupKey ?? user?.user?.id;
-  if (typeof key !== "string" || typeof user?.utterance !== "string") return res.writeHead(400).end();
+  if (typeof key !== "string" || key.length > 256 || typeof user?.utterance !== "string" || user.utterance.length > 1000)
+    return res.writeHead(400).end();
 
+  prune();
   const reply = await handle(games.get(key), user.utterance, judge);
   if (reply.game) games.set(key, reply.game);
   res.writeHead(200, { "content-type": "application/json; charset=utf-8" }).end(JSON.stringify(kakao(reply.text, reply.buttons)));
