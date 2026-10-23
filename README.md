@@ -27,6 +27,16 @@ Node 23.6 이상이 필요합니다(`.ts`를 직접 실행). 런타임 의존성
 
 > ⚠️ Zen 무료 등급은 "OpenCode 안에서만 사용"을 조건으로 합니다. chat/completions 엔드포인트는 실제로 외부 호출을 거부합니다. `systemone`은 현재 키 없이 응답하지만 언제든 막힐 수 있습니다. 실서비스에서는 `JEV_MODEL=jev-1.13`과 `OPENCODE_API_KEY`를 쓰세요. 게임 상태는 메모리에만 있어서, 재시작하면 진행 중인 게임이 사라집니다.
 
+## Docker
+
+```sh
+cp .env.example .env        # SKILL_SECRET 등을 채운다
+docker compose up -d --build                    # 127.0.0.1:${KBOT_PORT:-8080}
+docker compose --profile tunnel up -d --build   # + Cloudflare Tunnel (TUNNEL_TOKEN 필요)
+```
+
+컨테이너는 non-root(`node`) 사용자로, 읽기 전용 파일시스템과 `cap_drop: ALL` 상태에서 실행합니다. 포트는 로컬에만 열어 두니, 외부 공개는 터널이나 리버스 프록시로 합니다. 터널을 쓸 때는 Cloudflare Zero Trust에서 public hostname(예: `kbot.westernbear.dev`)의 서비스를 `http://kbot:8080`으로 지정합니다.
+
 ## 1:1 챗봇 연결 (카카오 i 오픈빌더)
 
 1. [챗봇 관리자센터](https://chatbot.kakao.com)에서 봇을 만들고 카카오톡 채널을 연결합니다.
