@@ -1,5 +1,6 @@
 services:
   kbot:
+    image: ghcr.io/westernbear/guessinggame:latest
     build: .
     restart: unless-stopped
     env_file: .env

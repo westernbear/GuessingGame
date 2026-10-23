@@ -37,6 +37,8 @@ docker compose up -d --build                    # 127.0.0.1:${KBOT_PORT:-8080}
 docker compose --profile tunnel up -d --build   # + Cloudflare Tunnel (TUNNEL_TOKEN 필요)
 ```
 
+`main`에 푸시하면 GitHub Actions(`.github/workflows/image.yml`)가 테스트 후 `ghcr.io/westernbear/guessinggame`에 `latest`와 `sha-<커밋>` 태그로 이미지를 올립니다(`v*` 태그는 버전 태그). 서버에서는 `docker compose pull && docker compose up -d`로 빌드 없이 받아 쓸 수 있습니다.
+
 컨테이너는 non-root(`node`) 사용자로, 읽기 전용 파일시스템과 `cap_drop: ALL` 상태에서 실행합니다. 포트는 로컬에만 열어 두니, 외부 공개는 터널이나 리버스 프록시로 합니다. 터널을 쓸 때는 Cloudflare Zero Trust에서 public hostname(예: `kbot.westernbear.dev`)의 서비스를 `http://kbot:8080`으로 지정합니다.
 
 ## 1:1 챗봇 연결 (카카오 i 오픈빌더)
