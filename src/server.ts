@@ -1,5 +1,5 @@
-import { timingSafeEqual } from "node:crypto";
-import { createServer } from "node:http";
+import { createHash, timingSafeEqual } from "node:crypto";
+import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { dayNumber, handle, type Game, type Judge } from "./game.ts";
 
 // 오픈빌더 스킬의 헤더값에 x-skill-secret을 넣어 카카오가 아닌 호출을 막는다
@@ -46,8 +46,10 @@ function prune() {
   pruned = today;
 }
 
+// 고정 길이 해시끼리 비교해야 길이가 달라도 timingSafeEqual이 던지지 않는다
+const sha = (v: string) => createHash("sha256").update(v).digest();
 const authorized = (header: string | string[] | undefined) =>
-  !SECRET || (typeof header === "string" && header.length === SECRET.length && timingSafeEqual(Buffer.from(header), Buffer.from(SECRET)));
+  !SECRET || (typeof header === "string" && timingSafeEqual(sha(header), sha(SECRET)));
 
 const kakao = (text: string, buttons: string[]) => ({
   version: "2.0",
@@ -57,7 +59,7 @@ const kakao = (text: string, buttons: string[]) => ({
   },
 });
 
-createServer(async (req, res) => {
+async function route(req: IncomingMessage, res: ServerResponse) {
   if (req.method !== "POST" || req.url !== "/skill") return res.writeHead(404).end();
   if (!authorized(req.headers["x-skill-secret"])) return res.writeHead(401).end();
   if (Number(req.headers["content-length"] ?? 0) > MAX_BODY) return res.writeHead(413).end();
@@ -82,4 +84,13 @@ createServer(async (req, res) => {
   const reply = await handle(games.get(key), user.utterance, judge);
   if (reply.game) games.set(key, reply.game);
   res.writeHead(200, { "content-type": "application/json; charset=utf-8" }).end(JSON.stringify(kakao(reply.text, reply.buttons)));
-}).listen(Number(process.env.PORT ?? 8080));
+}
+
+// 요청 하나의 예외가 프로세스를 죽이지 않게 한다
+createServer((req, res) =>
+  route(req, res).catch((err) => {
+    console.error(err);
+    if (!res.headersSent) res.writeHead(500);
+    res.end();
+  }),
+).listen(Number(process.env.PORT ?? 8080));
