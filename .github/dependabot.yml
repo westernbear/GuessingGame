@@ -1,0 +1,7 @@
+version: 2
+updates:
+  # SHA로 고정한 액션을 주간 PR로 갱신한다
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
