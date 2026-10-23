@@ -1,0 +1,17 @@
+{
+  "name": "dasut-gogae-bot",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=23.6"
+  },
+  "scripts": {
+    "start": "node src/server.ts",
+    "test": "node --test",
+    "check": "tsc -p ."
+  },
+  "devDependencies": {
+    "@types/node": "^24.19.2",
+    "typescript": "^5.9.3"
+  }
+}
